@@ -1,4 +1,5 @@
 import { readBlockConfig, decorateIcons } from '../../scripts/lib-franklin.js';
+import { getLanguageFromPathname } from '../../scripts/utils.js';
 
 /**
  * loads and decorates the footer
@@ -9,8 +10,8 @@ export default async function decorate(block) {
   block.textContent = '';
 
   // fetch footer content
-  const footerPath = cfg.footer || '/footer';
-  const resp = await fetch(`${footerPath}.plain.html`, window.location.pathname.endsWith('/footer') ? { cache: 'reload' } : {});
+  const footerPath = cfg.footer || `/fragments/footer/${getLanguageFromPathname()}`;
+  const resp = await fetch(`${footerPath}.plain.html`, window.location.pathname.includes('/footer') ? { cache: 'reload' } : {});
 
   if (resp.ok) {
     const html = await resp.text();
