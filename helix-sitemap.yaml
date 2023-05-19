@@ -1,7 +1,7 @@
 sitemaps:
   default:
     origin: https://main--franklin-demo--ivanviviani.hlx.live
-    Lastmod: DD MMM YYYY hh:mm:ss
+    Lastmod: YYYY-MM-DDThh:mmTZD
     languages:
       en:
         source: /en/query-index.json
