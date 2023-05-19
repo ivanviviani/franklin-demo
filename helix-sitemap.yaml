@@ -1,6 +1,7 @@
 sitemaps:
-  example:
+  default:
     origin: https://main--franklin-demo--ivanviviani.hlx.live
+    Lastmod: DD MMM YYYY hh:mm:ss
     languages:
       en:
         source: /en/query-index.json
