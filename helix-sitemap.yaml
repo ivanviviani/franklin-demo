@@ -1,0 +1,14 @@
+sitemaps:
+  example:
+    origin: https://main--franklin-demo--ivanviviani.hlx.live
+    languages:
+      en:
+        source: /en/query-index.json
+        destination: /sitemap.xml
+        hreflang: en
+        alternate: /en/{path}
+      it:
+        source: /it/query-index.json
+        destination: /sitemap.xml
+        hreflang: it
+        alternate: /it/{path}
