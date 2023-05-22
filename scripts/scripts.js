@@ -75,18 +75,35 @@ async function loadEager(doc) {
 /**
  * Adds the favicon.
  * @param {string} href The favicon URL
+ * @param {string} [rel] The favicon rel
  */
-export function addFavIcon(href) {
+export function addFavIcon(href, rel = 'icon') {
   const link = document.createElement('link');
-  link.rel = 'icon';
+  link.rel = rel;
   link.type = 'image/png';
   link.href = href;
-  const existingLink = document.querySelector('head link[rel="icon"]');
+  const existingLink = document.querySelector(`head link[rel="${rel}"]`);
   if (existingLink) {
     existingLink.replaceWith(link);
   } else {
     document.head.append(link);
   }
+}
+
+export async function fetchFragment(path, plain = true) {
+  const response = await fetch(path + (plain ? '.plain.html' : ''));
+  if (!response.ok) {
+    // eslint-disable-next-line no-console
+    console.error('error loading fragment details', response);
+    return null;
+  }
+  const text = await response.text();
+  if (!text) {
+    // eslint-disable-next-line no-console
+    console.error('fragment details empty', path);
+    return null;
+  }
+  return text;
 }
 
 /**
@@ -95,13 +112,15 @@ export function addFavIcon(href) {
  */
 async function loadLazy(doc) {
   const main = doc.querySelector('main');
+
+  loadHeader(doc.querySelector('header'));
+
   await loadBlocks(main);
 
   const { hash } = window.location;
   const element = hash ? doc.getElementById(hash.substring(1)) : false;
   if (hash && element) element.scrollIntoView();
 
-  loadHeader(doc.querySelector('header'));
   loadFooter(doc.querySelector('footer'));
 
   loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
