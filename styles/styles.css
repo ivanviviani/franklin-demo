@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
- :root {
+:root {
   /* colors */
   --link-color: #035fe6;
   --link-hover-color: #136ff6;
@@ -37,8 +37,37 @@
   --heading-font-size-s: 20px;
   --heading-font-size-xs: 18px;
 
+  /* Typography */
+  --type-detail-all-weight: 700;
+  --type-detail-m-size: 12px;
+  --type-detail-m-lh: 15px;
+  --type-detail-m-transform: uppercase;
+  --type-heading-all-weight: 700;
+  --type-heading-xxl-size: 44px;
+  --type-heading-xxl-lh: 55px;
+  --type-heading-xl-size: 2.25em;
+  --type-heading-xl-lh: 45px;
+  --type-heading-l-size: 28px;
+  --type-heading-l-lh: 35px;
+  --type-heading-m-size: 24px;
+  --type-heading-m-lh: 30px;
+  --type-body-l-size: 24px;
+  --type-body-l-lh: 27px;
+  --type-body-m-size: 20px;
+  --type-body-m-lh: 1.6875;
+  --type-body-s-size: 14px;
+  --type-body-s-lh: 1.3875;
+
   /* nav height */
   --nav-height: 64px;
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-s: 16px;
+  --spacing-m: 24px;
+  --spacing-l: 48px;
+  --spacing-xl: 56px;
+  --spacing-xxl: 80px;
 
 }
 
