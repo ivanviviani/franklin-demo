@@ -369,8 +369,10 @@ export function buildBlock(blockName, content) {
   // build image block nested div structure
   blockEl.classList.add(blockName);
   table.forEach((row) => {
+    if (!row.some((col) => col !== '')) return;
     const rowEl = document.createElement('div');
     row.forEach((col) => {
+      if (col === '') return;
       const colEl = document.createElement('div');
       const vals = col.elems ? col.elems : [col];
       vals.forEach((val) => {

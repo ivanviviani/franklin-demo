@@ -57,3 +57,7 @@ export function getCookie(cname) {
   }
   return "";
 }
+
+export function prependSlash(path) {
+  return path.startsWith("/") ? path : `/${path}`;
+}

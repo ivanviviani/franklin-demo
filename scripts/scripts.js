@@ -11,9 +11,18 @@ import {
   waitForLCP,
   loadBlocks,
   loadCSS,
+  decorateBlock,
+  loadBlock,
+  toClassName,
+  getMetadata,
 } from './lib-franklin.js';
 
-const LCP_BLOCKS = []; // add your LCP blocks to the list
+/**
+ * to add/remove a template, just add/remove it in the list below
+ */
+const TEMPLATE_LIST = [];
+
+const LCP_BLOCKS = ['hero']; // add your LCP blocks to the list
 
 /**
  * Builds hero block and prepends to main in a new section.
@@ -31,12 +40,54 @@ function buildHeroBlock(main) {
 }
 
 /**
+ * If breadcrumbs = auto in  Metadata, 1 create space for CLS, 2 load breadcrumbs block
+ * Breadcrumb block created at the top of first section
+ */
+function createBreadcrumbsSpace(main) {
+  if (getMetadata('breadcrumbs') === 'auto') {
+    const blockWrapper = document.createElement('div');
+    blockWrapper.classList.add('breadcrumbs-wrapper');
+    main.prepend(blockWrapper);
+  }
+}
+async function loadBreadcrumbs(main) {
+  if (getMetadata('breadcrumbs') === 'auto') {
+    const blockWrapper = main.querySelector('.breadcrumbs-wrapper');
+    const block = buildBlock('breadcrumbs', '');
+    blockWrapper.append(block);
+    decorateBlock(block);
+    await loadBlock(block);
+  }
+}
+
+/**
  * Builds all synthetic blocks in a container element.
  * @param {Element} main The container element
  */
 function buildAutoBlocks(main) {
   try {
     buildHeroBlock(main);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Auto Blocking failed', error);
+  }
+}
+
+/**
+ * Run template specific decoration code.
+ * @param {Element} main The container element
+ */
+async function decorateTemplates(main) {
+  try {
+    const template = toClassName(getMetadata('template'));
+    const templates = TEMPLATE_LIST;
+    if (templates.includes(template)) {
+      const mod = await import(`../templates/${template}/${template}.js`);
+      loadCSS(`${window.hlx.codeBasePath}/templates/${template}/${template}.css`);
+      if (mod.default) {
+        await mod.default(main);
+      }
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Auto Blocking failed', error);
@@ -66,7 +117,9 @@ async function loadEager(doc) {
   decorateTemplateAndTheme();
   const main = doc.querySelector('main');
   if (main) {
+    await decorateTemplates(main);
     decorateMain(main);
+    createBreadcrumbsSpace(main);
     document.body.classList.add('appear');
     await waitForLCP(LCP_BLOCKS);
   }
@@ -122,6 +175,7 @@ async function loadLazy(doc) {
   if (hash && element) element.scrollIntoView();
 
   loadFooter(doc.querySelector('footer'));
+  loadBreadcrumbs(main);
 
   loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
   addFavIcon(`${window.hlx.codeBasePath}/styles/favicon.png`);
