@@ -19,6 +19,15 @@ indices:
       description:
         select: head > meta[name="description"]
         value: attribute(el, "content")
+      type:
+        select: head > meta[name="template"]
+        value: attribute(el, "content")
+      h1:
+        select: h1
+        value: textContent(el)
+      robots:
+        select: head > meta[name="robots"]
+        value: attribute(el, "content")
   it:
     include:
       - /it
@@ -38,4 +47,13 @@ indices:
         value: attribute(el, "content")
       description:
         select: head > meta[name="description"]
+        value: attribute(el, "content")
+      type:
+        select: head > meta[name="template"]
+        value: attribute(el, "content")
+      h1:
+        select: h1
+        value: textContent(el)
+      robots:
+        select: head > meta[name="robots"]
         value: attribute(el, "content")
