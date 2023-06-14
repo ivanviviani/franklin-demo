@@ -1,5 +1,6 @@
 {
   "project": "Franklin Demo",
+  "pushDown": true,
   "plugins": [
     {
       "id": "library",
