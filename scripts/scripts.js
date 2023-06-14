@@ -90,7 +90,7 @@ async function decorateTemplates(main) {
     }
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Auto Blocking failed', error);
+    console.error('Template loading failed', error);
   }
 }
 
@@ -182,6 +182,8 @@ async function loadLazy(doc) {
   sampleRUM('lazy');
   sampleRUM.observe(main.querySelectorAll('div[data-block-name]'));
   sampleRUM.observe(main.querySelectorAll('picture > img'));
+
+  doc.querySelectorAll('div:not([class]):not([id]):empty').forEach((empty) => empty.remove());
 }
 
 /**
