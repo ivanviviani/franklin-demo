@@ -99,6 +99,14 @@ body.appear {
   display: unset;
 }
 
+/* THEME "navy" */
+body.navy {
+
+  /* colors */
+  --text-color: navy;
+  --text-color-light: aquamarine;
+}
+
 header {
   height: var(--nav-height);
 }
