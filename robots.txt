@@ -1,3 +1,5 @@
 # Custom robots.txt
 User-agent: *
 Disallow: /
+
+sitemap: https://main--franklin-demo--ivanviviani.hlx.live/sitemap.xml
