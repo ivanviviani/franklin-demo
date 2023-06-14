@@ -1,6 +1,7 @@
 {
   "project": "Franklin Demo",
   "pushDown": true,
+  "pushDownSelector": ".docs-material",
   "plugins": [
     {
       "id": "library",
