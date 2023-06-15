@@ -261,12 +261,15 @@ main img {
 }
 
 main .section {
-  padding: 64px 16px;
+  padding: 32px 16px;
+}
+main .section:has(h1,h2,h3,h4,h5,h6) {
+  padding-top: 12px;
 }
 
 @media (min-width: 600px) {
   main .section {
-    padding: 64px 32px;
+    padding: 32px 32px 64px;
   }
 }
 
