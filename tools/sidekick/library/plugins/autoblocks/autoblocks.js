@@ -3,8 +3,8 @@ import {
   loadTemplate,
   onBlockListCopyButtonClicked,
   renderScaffolding,
-} from "../utils/blocks";
-import { createTag } from "../utils/dom";
+} from "../utils/blocks.js";
+import { createTag } from "../utils/dom.js";
 
 /**
  * Called when a user tries to load the plugin
