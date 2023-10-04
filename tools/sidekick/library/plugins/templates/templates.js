@@ -9,289 +9,402 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { createCopy } from "../utils/dom.js";
-import { createElement } from "../utils/utils.js";
 
-const gitowner = 'ivanviviani';
-const gitrepo = 'franklin-demo';
+/* eslint-disable
+  no-await-in-loop,
+  no-param-reassign,
+  consistent-return,
+  no-plusplus,
+  no-prototype-builtins */
 
-export async function fetchTemplate(path) {
-  if (!window.templates) {
-    window.templates = {};
-  }
-  if (!window.templates[path]) {
-    const resp = await fetch(`${path}?view-doc-source=true`);
-    if (!resp.ok) return "";
+import {
+  getBlockName,
+  parseDescription,
+  copyBlockToClipboard,
+  copyPageToClipboard,
+  copyDefaultContentToClipboard,
+} from "../utils/utils.js";
+import {
+  createTag,
+  removeAllEventListeners,
+  setURLParams,
+} from "../utils/dom.js";
+import { sampleRUM } from "../utils/rum.js";
 
-    const html = await resp.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    window.templates[path] = doc;
-  }
-
-  return window.templates[path];
+/**
+ * Renders the scaffolding for the block plugin
+ * @returns {String} HTML string
+ */
+function renderScaffolding() {
+  return /* html */ `
+        <sp-split-view
+            primary-size="350"
+            dir="ltr"
+            splitter-pos="250"
+            resizable
+          >
+          <div class="menu">
+            <div class="search">
+              <sp-search></sp-search>
+            </div>
+            <div class="list-container">
+            </div>
+          </div>
+          <div class="content">
+          </div>
+        </sp-split-view>
+      `;
 }
 
-function createTag(tag, attributes = {}, html = undefined) {
-  const el = document.createElement(tag);
-  if (html) {
-    if (html instanceof HTMLElement || html instanceof SVGElement) {
-      el.append(html);
-    } else {
-      el.insertAdjacentHTML("beforeend", html);
-    }
-  }
-  if (attributes) {
-    Object.entries(attributes).forEach(([key, val]) => {
-      el.setAttribute(key, val);
+/**
+ * Renders the preview frame including the top action bar, frame view and details container
+ * @param {HTMLElement} container
+ */
+function renderFrame(container) {
+  if (!isFrameLoaded(container)) {
+    const contentContainer = container.querySelector(".content");
+    contentContainer.innerHTML = /* html */ `
+          <sp-split-view
+            vertical
+            resizable
+            primary-size="2600"
+            secondary-min="200"
+            splitter-pos="250"
+          >
+            <div class="view">
+              <div class="action-bar">
+                <sp-action-group compact selects="single" selected="desktop">
+                  <sp-action-button value="mobile">
+                      <sp-icon-device-phone slot="icon"></sp-icon-device-phone>
+                      Mobile
+                  </sp-action-button>
+                  <sp-action-button value="tablet">
+                      <sp-icon-device-tablet slot="icon"></sp-icon-device-tablet>
+                      Tablet
+                  </sp-action-button>
+                  <sp-action-button value="desktop">
+                      <sp-icon-device-desktop slot="icon"></sp-icon-device-desktop>
+                      Desktop
+                  </sp-action-button>
+                </sp-action-group>
+                <sp-divider size="s"></sp-divider>
+              </div>
+              <div class="frame-view">
+                <block-renderer></block-renderer>
+              </div>
+            </div>
+            <div class="details-container">
+              <div class="action-bar">
+                <h3 class="title"></h3>
+                <div class="actions">
+                    <sp-button class="copy-button">Copy</sp-button>
+                </div>
+              </div>
+              <sp-divider size="s"></sp-divider>
+              <div class="details"></div>
+            </div>
+          </sp-split-view>
+        `;
+
+    const actionGroup = container.querySelector("sp-action-group");
+    actionGroup.selected = "desktop";
+
+    // Setup listeners for the top action bar
+    const frameView = container.querySelector(".frame-view");
+    const mobileViewButton = removeAllEventListeners(
+      container.querySelector('sp-action-button[value="mobile"]')
+    );
+    mobileViewButton?.addEventListener("click", () => {
+      frameView.style.width = "480px";
+    });
+
+    const tabletViewButton = removeAllEventListeners(
+      container.querySelector('sp-action-button[value="tablet"]')
+    );
+    tabletViewButton?.addEventListener("click", () => {
+      frameView.style.width = "768px";
+    });
+
+    const desktopViewButton = removeAllEventListeners(
+      container.querySelector('sp-action-button[value="desktop"]')
+    );
+    desktopViewButton?.addEventListener("click", () => {
+      frameView.style.width = "100%";
     });
   }
-  el.style.textAlign = "left";
-  return el;
 }
 
-function decorateImages(templateSection, path) {
-  const url = new URL(path);
-  templateSection.querySelectorAll("img").forEach((img) => {
-    const srcSplit = img.src.split("/");
-    const mediaPath = srcSplit.pop();
-    img.src = `${url.origin}/${mediaPath}`;
-    const { width, height } = img;
-    const ratio = 1;
-    img.width = width * ratio;
-    img.height = height * ratio;
-  });
-
-  return [templateSection.innerHTML];
+/**
+ * Checks if the preview frame has been loaded yet
+ * @param {HTMLElement} container The container that hosts the preview frame
+ * @returns {Boolean} True if the frame has been loaded, false otherwise
+ */
+function isFrameLoaded(container) {
+  return container.querySelector(".details-container") !== null;
 }
 
-function createTable(block, name, path) {
-  decorateImages(block, path);
-  const rows = [...block.children];
-  const maxCols = rows.reduce(
-    (cols, row) => (row.children.length > cols ? row.children.length : cols),
-    0
+/**
+ * Updates the details container with the block title and description
+ * @param {HTMLElement} container The container containing the details container
+ * @param {String} title The title of the block
+ * @param {String} description The description of the block
+ */
+function updateDetailsContainer(container, title, description) {
+  // Set block title
+  const blockTitle = container.querySelector(".action-bar .title");
+  blockTitle.textContent = title;
+
+  // Set block description
+  const details = container.querySelector(".details");
+  details.innerHTML = "";
+  if (description) {
+    const descriptionElement = createTag("p", {}, description);
+    details.append(descriptionElement);
+  }
+}
+
+/**
+ * Attaches an event listener to the copy button in the preview UI
+ * @param {HTMLElement} container The container containing the copy button
+ * @param {HTMLElement} blockRenderer The block renderer
+ * @param {Object} defaultLibraryMetadata The default library metadata
+ * @param {Object} pageMetadata The page metadata
+ */
+function attachCopyButtonEventListener(
+  container,
+  blockRenderer,
+  defaultLibraryMetadata,
+  pageMetadata
+) {
+  const copyButton = removeAllEventListeners(
+    container.querySelector(".content .copy-button")
   );
-  const table = document.createElement("table");
-  table.setAttribute("border", 1);
-  const headerRow = document.createElement("tr");
-  headerRow.append(
-    createTag(
-      "th",
-      { colspan: maxCols, style: "background-color:#f4cccd;" },
-      name
-    )
-  );
-  table.append(headerRow);
-  rows.forEach((row) => {
-    const tr = document.createElement("tr");
-    [...row.children].forEach((col) => {
-      const td = document.createElement("td");
-      if (row.children.length < maxCols) {
-        td.setAttribute("colspan", maxCols);
-      }
-      td.innerHTML = col.innerHTML;
-      tr.append(td);
-    });
-    table.append(tr);
-  });
-  return table.outerHTML;
-}
+  copyButton.addEventListener("click", () => {
+    const copyElement = blockRenderer.getBlockElement();
+    const copyWrapper = blockRenderer.getBlockWrapper();
+    const copyBlockData = blockRenderer.getBlockData();
 
-function createImgElement(src, width, height) {
-  const imgEl = document.createElement("img");
-  imgEl.setAttribute("src", src);
-  imgEl.setAttribute("alt", "<replace with your hero image>");
-  imgEl.loading = "lazy";
-  imgEl.width = width;
-  imgEl.height = height;
-  return imgEl;
-}
+    // Return the copied DOM in the toast message so it can be tested
+    // Cannot read or write clipboard in tests
+    let copiedDOM;
 
-function createMetadataTable(headSection, path) {
-  decorateImages(headSection, path);
-  // meta tags to include and their docx translation
-  const validMetaMap = {
-    template: "Template",
-    "og:title": "Title",
-    description: "Description",
-    "og:image": "Image",
-    author: "Author",
-    "article:tag": "Tags",
-    "publication-date": "Publication Date",
-    "read-time": "Read Time",
-  };
-  // stuff relevant template meta tags into array
-  const metadataArray = [];
-  headSection.querySelectorAll("meta").forEach((row) => {
-    const headMetaTag =
-      row.getAttributeNames()[0] === "property"
-        ? row.getAttribute("property")
-        : row.getAttribute("name");
-    const metaTagValue = validMetaMap[headMetaTag];
-    if (metaTagValue !== undefined) {
-      const metaObj = {
-        attrib: metaTagValue,
-        value: row.getAttribute("content"),
-      };
-      metadataArray.push(metaObj);
-    }
-  });
-  // resolve duplicates
-  const compactedMetaArray = Array.from(
-    new Set(metadataArray.map((set) => set.attrib))
-  ).map((attrib) => ({
-    attrib,
-    value: metadataArray
-      .filter((set) => set.attrib === attrib)
-      .map((attribute) => attribute.value)
-      .join(", "),
-  }));
-
-  const maxCols = 2;
-  const table = document.createElement("table");
-  table.setAttribute("border", 1);
-  const headerRow = document.createElement("tr");
-  headerRow.append(
-    createTag(
-      "th",
-      { colspan: maxCols, style: "background-color:#f4cccd;" },
-      "metadata"
-    )
-  );
-  table.append(headerRow);
-  compactedMetaArray.forEach((row) => {
-    const tr = document.createElement("tr");
-    const tdName = document.createElement("td");
-    tdName.innerText = row.attrib;
-    tr.append(tdName);
-    const tdValue = document.createElement("td");
-    if (row.attrib === "Image") {
-      // use this image url to avoid 404
-      const templateImgUrl =
-        `https://main--${gitrepo}--${gitowner}.hlx.live/default-meta-image.png?optimize=medium`;
-      tdValue.appendChild(createImgElement(templateImgUrl, "280", "200"));
-      tdValue.appendChild(
-        document.createTextNode("<replace with your image>")
+    // Are we trying to copy a block, a page or default content?
+    // The copy operation is slightly different depending on which
+    if (
+      defaultLibraryMetadata.type === "template" ||
+      defaultLibraryMetadata.multiSectionBlock ||
+      defaultLibraryMetadata.compoundBlock
+    ) {
+      copiedDOM = copyPageToClipboard(
+        copyWrapper,
+        copyBlockData.url,
+        pageMetadata
+      );
+    } else if (blockRenderer.isBlock) {
+      copiedDOM = copyBlockToClipboard(
+        copyWrapper,
+        getBlockName(copyElement, true),
+        copyBlockData.url
       );
     } else {
-      tdValue.innerText = row.value;
+      copiedDOM = copyDefaultContentToClipboard(copyWrapper, copyBlockData.url);
     }
-    tr.append(tdValue);
-    table.append(tr);
-  });
 
-  return table.outerHTML;
+    container.dispatchEvent(
+      new CustomEvent("Toast", {
+        detail: { message: "Copied Block", result: copiedDOM },
+      })
+    );
+  });
 }
 
-function createSection(section, path) {
-  decorateImages(section, path);
-  let output = "";
-  [...section.children].forEach((row) => {
-    if (row.nodeName === "DIV") {
-      const blockName = row.classList[0];
-      output = output.concat(createTable(row, blockName, path));
-    } else if (row.nodeName === "H1") {
-      // add font-size and text color to blog post title and h1 element
-      row.setAttribute("style", "color:blue; font-size: 20px;");
-      output = output.concat(row.outerHTML);
-      output = output.replace("<p>", "<p style='font-size: 36px;'>");
-    } else if (row.nodeName === "H2") {
-      // add font-size to h2 element
-      row.setAttribute("style", "color:black; font-size: 20px;");
-      output = output.concat(row.outerHTML);
-    } else {
-      output = output.concat(row.outerHTML);
-    }
-  });
-  return output;
+function onBlockListCopyButtonClicked(event, container) {
+  const {
+    blockWrapper: wrapper,
+    blockNameWithVariant: name,
+    blockURL,
+    defaultLibraryMetadata,
+    pageMetadata,
+  } = event.detail;
+
+  // Return the copied DOM in the toast message so it can be tested
+  // Cannot read or write clipboard in tests
+  let copiedDOM;
+
+  // We may not have rendered the block yet, so we need to check for a block to know if
+  // we are dealing with a block or default content
+  const block = wrapper.querySelector(":scope > div:not(.section-metadata)");
+  if (
+    defaultLibraryMetadata &&
+    (defaultLibraryMetadata.type === "template" ||
+      defaultLibraryMetadata.multiSectionBlock ||
+      defaultLibraryMetadata.compoundBlock)
+  ) {
+    copiedDOM = copyPageToClipboard(wrapper, blockURL, pageMetadata);
+  } else if (block) {
+    copiedDOM = copyBlockToClipboard(wrapper, name, blockURL);
+  } else {
+    copiedDOM = copyDefaultContentToClipboard(wrapper, blockURL);
+  }
+  container.dispatchEvent(
+    new CustomEvent("Toast", {
+      detail: { message: "Copied Block", target: wrapper, result: copiedDOM },
+    })
+  );
 }
 
-function processMarkup(template, path) {
-  decorateImages(template, path);
-  let output = "";
-  // process template body
-  template.body
-    .querySelector("main")
-    .querySelectorAll(":scope > div")
-    .forEach((row, i) => {
-      if (row.nodeName === "DIV") {
-        if (i > 0) output = output.concat("---");
-        output = output.concat(createSection(row, path));
-      } else {
-        output = output.concat(row.outerHTML);
-      }
-    });
-  // process template head to derive meta tags
-  output = output.concat("<br/>");
-  output = output.concat(createMetadataTable(template.head, path));
+function loadBlock(event, container) {
+  const content = container.querySelector(".block-library");
+  const {
+    blockWrapper,
+    blockData,
+    sectionLibraryMetadata,
+    defaultLibraryMetadata,
+  } = event.detail;
+  // Block element (first child of the wrapper)
+  const blockElement = blockWrapper.querySelector("div[class]");
 
-  return output;
+  // The name of the block (first column of the table)
+  const blockName = getBlockName(blockElement, false);
+
+  // Render the preview frame if we haven't already
+  renderFrame(content);
+
+  // For blocks we pull the block name from section metadata or the name given to the block
+  const authoredBlockName =
+    sectionLibraryMetadata.name ?? getBlockName(blockElement);
+
+  // Pull the description for this block,
+  // first from sectionLibraryMetadata and fallback to defaultLibraryMetadata
+  const { description: sectionDescription } = sectionLibraryMetadata;
+  const blockDescription = sectionDescription
+    ? parseDescription(sectionDescription)
+    : parseDescription(defaultLibraryMetadata.description);
+
+  // Set block title & description in UI
+  updateDetailsContainer(content, authoredBlockName, blockDescription);
+
+  const blockRenderer = content.querySelector("block-renderer");
+
+  // If the block element exists, load the block
+  blockRenderer.loadBlock(
+    blockName,
+    blockData,
+    blockWrapper,
+    defaultLibraryMetadata,
+    container
+  );
+
+  // Append the path and index of the current block to the url params
+  setURLParams([
+    ["path", blockData.path],
+    ["index", event.detail.index],
+  ]);
+
+  // Attach copy button event listener
+  attachCopyButtonEventListener(
+    container,
+    blockRenderer,
+    defaultLibraryMetadata,
+    undefined
+  );
+
+  // Track block view
+  sampleRUM("library:blockviewed", { target: blockData.url });
+}
+
+function loadTemplate(event, container) {
+  const content = container.querySelector(".block-library");
+  const { blockWrapper, blockData, defaultLibraryMetadata, pageMetadata } =
+    event.detail;
+
+  // Render the preview frame if we haven't already
+  renderFrame(content);
+
+  // For templates we pull the template name from default library metadata
+  // or the name given to the document in the library sheet.
+  const authoredTemplateName = defaultLibraryMetadata.name ?? blockData.name;
+
+  // Pull the description for this page from default metadata.
+  const templateDescription = parseDescription(
+    defaultLibraryMetadata.description
+  );
+
+  // Set template title & description in UI
+  updateDetailsContainer(content, authoredTemplateName, templateDescription);
+
+  const blockRenderer = content.querySelector("block-renderer");
+
+  // If the block element exists, load the block
+  blockRenderer.loadBlock(
+    "",
+    blockData,
+    blockWrapper,
+    defaultLibraryMetadata,
+    container
+  );
+
+  // Append the path and index of the current block to the url params
+  setURLParams([["path", blockData.path]], ["index"]);
+
+  // Attach copy button event listener
+  attachCopyButtonEventListener(
+    container,
+    blockRenderer,
+    defaultLibraryMetadata,
+    pageMetadata
+  );
+
+  // Track block view
+  sampleRUM("library:blockviewed", { target: blockData.url });
 }
 
 /**
  * Called when a user tries to load the plugin
  * @param {HTMLElement} container The container to render the plugin in
  * @param {Object} data The data contained in the plugin sheet
- * @param {String} query If search is active, the current search query
  */
-export async function decorate(container, data, _query) {
+export async function decorate(container, data) {
   container.dispatchEvent(new CustomEvent("ShowLoader"));
-  const sideNav = createElement("sp-sidenav", "", {
-    variant: "multilevel",
-    "data-testid": "templates",
+
+  const content = createTag(
+    "div",
+    { class: "block-library" },
+    renderScaffolding()
+  );
+  container.append(content);
+  const listContainer = content.querySelector(".list-container");
+
+  const blockList = createTag("block-list");
+  listContainer.append(blockList);
+
+  blockList.addEventListener("PreviewBlock", (e) => {
+    window.open(e.details.path, "_blockpreview");
   });
 
-  const promises = data.map(async (item) => {
-    const { name, path } = item;
-    const templatePromise = fetchTemplate(path);
+  // Handle LoadTemplate events
+  blockList.addEventListener("LoadTemplate", (loadPageEvent) =>
+    loadTemplate(loadPageEvent, container)
+  );
 
-    try {
-      const res = await templatePromise;
-      if (!res) {
-        throw new Error(`An error occurred fetching ${name}`);
-      }
+  // Handle LoadBlock events
+  blockList.addEventListener("LoadBlock", (loadBlockEvent) =>
+    loadBlock(loadBlockEvent, container)
+  );
 
-      const templateVariant = createElement("sp-sidenav-item", "", {
-        label: name,
-        preview: false,
-      });
-      sideNav.append(templateVariant);
+  // Handle CopyBlock events from the block list
+  blockList.addEventListener("CopyBlock", (blockListCopyEvent) =>
+    onBlockListCopyButtonClicked(blockListCopyEvent, container)
+  );
 
-      const childNavItem = createElement("sp-sidenav-item", "", {
-        label: name,
-        "data-testid": "item",
-      });
-      childNavItem.setAttribute("data-info", name); // TBD: this is template description
-      templateVariant.append(childNavItem);
-
-      childNavItem.addEventListener("click", () => {
-        const blobInput = processMarkup(res, path);
-        const blob = new Blob([blobInput], { type: "text/html" });
-        createCopy(blob);
-
-        // Show toast
-        container.dispatchEvent(
-          new CustomEvent("Toast", { detail: { message: "Copied Template" } })
-        );
-      });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e.message);
-      container.dispatchEvent(
-        new CustomEvent("Toast", {
-          detail: { message: e.message, variant: "negative" },
-        })
-      );
-    }
-
-    return templatePromise;
+  const search = content.querySelector("sp-search");
+  search.addEventListener("input", (e) => {
+    blockList.filterBlocks(e.target.value);
   });
 
-  await Promise.all(promises);
+  await blockList.loadBlocks(data, container);
 
   // Show blocks and hide loader
-  container.append(sideNav);
   container.dispatchEvent(new CustomEvent("HideLoader"));
 }
 
