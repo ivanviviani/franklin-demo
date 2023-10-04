@@ -465,13 +465,3 @@ export function createElement(tagName, classes, props) {
 
   return elem;
 }
-
-/**
- * Copies to the clipboard
- * @param {Blob} blob The data
- */
-export function createCopy(blob) {
-  // eslint-disable-next-line no-undef
-  const data = [new ClipboardItem({ [blob.type]: blob })];
-  navigator.clipboard.write(data);
-}
