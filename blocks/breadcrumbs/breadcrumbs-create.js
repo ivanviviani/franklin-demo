@@ -20,6 +20,19 @@ function skipParts(pathSplit) {
   return pathSplit.filter((item) => !partsToSkip.includes(item));
 }
 
+/**
+ * Skip crumb filter.
+ * @param {{
+ *   name: string,
+ *   url_path: string,
+ * }} crumb The crumb
+ */
+function skipCrumbFilter(crumb) {
+  if (!crumb.url_path) return true;
+  const crumbPathsToSkip = ["/en","/it","/blog","/news"];
+  return !crumbPathsToSkip.includes(crumb.url_path.slice(crumb.url_path.lastIndexOf("/")));
+}
+
 const customBreadcrumbs = {
   "/it": {
     name: "IT",
@@ -128,6 +141,14 @@ export default async function createBreadcrumbs(container) {
     }),
     { name: getName(pageIndex, path, pathSplit[pathSplit.length - 1], true) },
   ];
+
+  // filter crumbs
+  const filtered = breadcrumbs.filter(skipCrumbFilter);
+  if (filtered.length <= 1) {
+    // no breadcrumb with a single crumb
+    container?.closest('.breadcrumbs-wrapper')?.remove();
+    return;
+  }
 
   const ol = document.createElement("ol");
   breadcrumbs.forEach((crumb) => {
