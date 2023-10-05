@@ -151,7 +151,7 @@ export default async function createBreadcrumbs(container) {
   }
 
   const ol = document.createElement("ol");
-  breadcrumbs.forEach((crumb) => {
+  filtered.forEach((crumb) => {
     ol.appendChild(createBreadcrumbListItem(crumb));
   });
   container.appendChild(ol);
