@@ -30,15 +30,16 @@ function getFilteredAuthors(data, query) {
   );
 }
 
-export async function decorate(container, ignored, query) {
-  const data = await getAuthorData();
+export async function decorate(container, data, query) {
+
+  console.log(data);
 
   const createMenuItems = () => {
     const filteredAuthors = getFilteredAuthors(data, query);
     return filteredAuthors
       .map(
         (item) => `
-          <sp-menu-item value="${item[PROPS.AUTHOR_FULL_NAME]} (${item[PROPS.AUTHOR_ID]})">
+          <sp-menu-item value="${item[PROPS.AUTHOR_FULL_NAME]} (${item[PROPS.AUTHOR_ID]})" data-clipboard-value="${item[PROPS.AUTHOR_FULL_NAME]}">
             ${item[PROPS.AUTHOR_FULL_NAME]} <span class="author-id">(${item[PROPS.AUTHOR_ID]})</span>
           </sp-menu-item>
         `
@@ -47,8 +48,8 @@ export async function decorate(container, ignored, query) {
   };
 
   const handleCopyButtonClick = (e) => {
-    const { value } = e.target;
-    navigator.clipboard.writeText(value);
+    const { clipboardValue } = e.target.dataset;
+    navigator.clipboard.writeText(clipboardValue);
     container.dispatchEvent(
       new CustomEvent(PLUGIN_EVENTS.TOAST, {
         detail: { message: "Copied Author" },
