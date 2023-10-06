@@ -7,15 +7,6 @@ const PROPS = {
   AUTHOR_SHORT_NAME: "shortName",
 };
 
-async function getAuthorData() {
-  const resp = await fetch("/authors.json?limit=5000");
-  if (resp.ok) {
-    const json = await resp.json();
-    return json.data;
-  }
-  throw new Error("Error fetching authors.json");
-}
-
 function getFilteredAuthors(data, query) {
   if (!query) {
     return data;

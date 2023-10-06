@@ -58,5 +58,5 @@ export async function decorate(container, data, query) {
 
 export default {
   title: "Templates",
-  searchEnabled: false,
+  searchEnabled: false, // search handled internally
 };

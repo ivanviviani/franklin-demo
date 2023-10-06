@@ -1,9 +1,9 @@
 const DEFAULT_LANGUAGE = "en";
-const DEV_ROOTS = ["dev","block-library"];
+const DEV_ROOTS = ["dev","block-library","experiments"];
 
 export function getLanguageFromPathname(pn = window.location.pathname) {
   const firstLevel = pn.split("/")[1];
-  if (DEV_ROOTS.includes(firstLevel)) { 
+  if (DEV_ROOTS.includes(firstLevel)) {
     return DEFAULT_LANGUAGE;
   }
   return firstLevel || DEFAULT_LANGUAGE;
