@@ -5,3 +5,5 @@ LICENSE
 package.json
 package-lock.json
 test/*
+tailwind.config.js
+styles/tw.tailwind.css
