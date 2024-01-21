@@ -87,7 +87,7 @@ export async function decorate(container, data, query) {
         card.addEventListener('click', () => {
           navigator.clipboard.writeText(`:${icon.name}:`);
           // Show toast
-          container.dispatchEvent(new CustomEvent('Toast', { detail: { message: 'Copied Icon' } }));
+          container.dispatchEvent(new CustomEvent('Toast', { detail: { message: `Copied Icon "${iconText}"` } }));
         });
       });
     } catch (e) {

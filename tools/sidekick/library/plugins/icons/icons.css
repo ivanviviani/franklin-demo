@@ -18,8 +18,9 @@
 }
 
 .icon-grid sp-card {
-  width: 96px;
-  height: 96px;
+  width: 120px;
+  height: 120px;
+  cursor: pointer;
 }
 
 .grid-container {
