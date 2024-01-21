@@ -594,10 +594,6 @@ video {
   display: inline;
 }
 
-.inline-flex {
-  display: inline-flex;
-}
-
 .table {
   display: table;
 }
