@@ -4,6 +4,8 @@ karma.config.js
 LICENSE
 package.json
 package-lock.json
+webpack.config.js
 test/*
+build/*
 tailwind.config.js
 styles/tw.tailwind.css

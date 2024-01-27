@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "description": "Starter project for Adobe Helix",
   "scripts": {
+    "win:deps:update": "del /s /q scripts\\dependencies\\* && webpack --mode production && node build/dependencies.js",
+    "linux:deps:update": "rm -r scripts/dependencies/* || true && webpack --mode production && node build/dependencies.js",
     "aem": "concurrently \"npm:tw:watch\" \"npm:aem:up\"",
     "aem:up": "aem up",
     "tw:watch": "npx tailwindcss -o ./styles/tw.css --watch",
@@ -30,12 +32,59 @@
     "@web/test-runner-commands": "0.6.5",
     "chai": "4.3.7",
     "concurrently": "^8.2.2",
+    "copy-webpack-plugin": "^11.0.0",
     "eslint": "8.35.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-plugin-import": "2.27.5",
+    "fs": "^0.0.1-security",
     "sinon": "15.0.1",
     "stylelint": "15.2.0",
     "stylelint-config-standard": "30.0.1",
-    "tailwindcss": "^3.4.1"
-  }
+    "tailwindcss": "^3.4.1",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.12"
+  },
+  "copyDependencies": [
+    {
+      "from": "node_modules/solid-js/",
+      "to": "scripts/dependencies/solid-js/",
+      "globOptions": {
+        "ignore": [
+          "**/*.cjs",
+          "**/dev.js",
+          "**/server.js",
+          "**/storage.js",
+          "**/package.json",
+          "**/LICENSE",
+          "**/README.md",
+          "**/jsx-runtime/**",
+          "**/universal/**"
+        ]
+      },
+      "fileIncludes": [
+        {
+          "file": "/dist/solid.js",
+          "category": "solid-js",
+          "isModule": true
+        },
+        {
+          "file": "/html/dist/html.js",
+          "category": "solid-js",
+          "isModule": true
+        },
+        {
+          "file": "/store/dist/store.js",
+          "category": "solid-js",
+          "isModule": true
+        },
+        {
+          "file": "/web/dist/web.js",
+          "category": "solid-js",
+          "isModule": true
+        }
+      ]
+    }
+  ]
 }

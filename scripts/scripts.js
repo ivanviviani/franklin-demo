@@ -17,6 +17,14 @@ import {
   getMetadata,
 } from './lib-franklin.js';
 
+// Load a list of dependencies the site needs
+const loadDependenciesPromise = fetch(`${window.hlx.codeBasePath}/scripts/dependencies.json`)
+  .then((res) => res.json())
+  // eslint-disable-next-line no-use-before-define
+  .then(loadDependencies);
+
+const dependencyScripts = [];
+
 /**
  * to add/remove a template, just add/remove it in the list below
  */
@@ -200,6 +208,66 @@ async function loadPage() {
   await loadEager(document);
   await loadLazy(document);
   loadDelayed();
+}
+
+/**
+ * Loads a JS file.
+ * @param {string} src URL to the JS file
+ * @param {Object} attrs additional optional attributes
+ */
+export async function loadScript(src, attrs, isModule = false) {
+  return new Promise((resolve, reject) => {
+    if (!document.querySelector(`head > script[src="${src}"]`)) {
+      const script = document.createElement('script');
+      script.src = src;
+      if (attrs) {
+      // eslint-disable-next-line no-restricted-syntax, guard-for-in
+        for (const attr in attrs) {
+          script.setAttribute(attr, attrs[attr]);
+        }
+      }
+      if (isModule) {
+        script.setAttribute('type', 'module');
+      }
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.append(script);
+    } else {
+      resolve();
+    }
+  });
+}
+
+/**
+ * Loads all dependencies in an async way so we can leverage
+ * the browser's ability to load multiple resources in parallel.
+ */
+async function loadDependencies(dependenciesJSON) {
+  dependenciesJSON?.forEach((dependency) => {
+    if (dependency.type === 'js') {
+      if (!dependency.attrs || !dependency.attrs.find((attr) => attr === 'async')) {
+        dependencyScripts.push(loadScript(dependency.src, dependency.attrs, dependency.isModule));
+      } else {
+        dependencyScripts.push({
+          category: dependency.category || dependency.src,
+          script: loadScript(dependency.src, dependency.attrs, dependency.isModule),
+        });
+      }
+    } else if (dependency.type === 'css') {
+      loadCSS(dependency.href);
+    }
+  });
+  await Promise.all(dependencyScripts);
+}
+
+export async function waitForDependency(dependencyCategory) {
+  // make sure dependencies have been initialized
+  await loadDependenciesPromise;
+  const dependencies = dependencyScripts.filter((d) => d.category === dependencyCategory);
+  if (dependencies && dependencies.length > 0) {
+    return Promise.all(dependencies.map((d) => d.script));
+  }
+  return Promise.resolve();
 }
 
 loadPage();

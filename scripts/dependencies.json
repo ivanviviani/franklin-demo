@@ -1,0 +1,26 @@
+[
+  {
+    "category": "solid-js",
+    "type": "js",
+    "src": "/scripts/dependencies/solid-js/dist/solid.js",
+    "isModule": true
+  },
+  {
+    "category": "solid-js",
+    "type": "js",
+    "src": "/scripts/dependencies/solid-js/html/dist/html.js",
+    "isModule": true
+  },
+  {
+    "category": "solid-js",
+    "type": "js",
+    "src": "/scripts/dependencies/solid-js/store/dist/store.js",
+    "isModule": true
+  },
+  {
+    "category": "solid-js",
+    "type": "js",
+    "src": "/scripts/dependencies/solid-js/web/dist/web.js",
+    "isModule": true
+  }
+]

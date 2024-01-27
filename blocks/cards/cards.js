@@ -1,6 +1,22 @@
+import { createSignal, onCleanup } from 'solid-js';
+import html from 'solid-js/html';
+import { render } from 'solid-js/web';
 import { createOptimizedPicture } from '../../scripts/lib-franklin.js';
+import { waitForDependency } from '../../scripts/scripts.js';
 
-export default function decorate(block) {
+const Counter = (init) => {
+  const [count, setCount] = createSignal(init ?? 0);
+  return html`
+    <li>
+      <button type="button" class="p-4 bg-red" onclick="${() => setCount((c) => c - 1)}">-</button>
+      <span class="font-semibold">Count value is ${() => count()}</span>
+      <button type="button" class="p-4 bg-green" onclick="${() => setCount((c) => c + 1)}">+</button>
+    </li>
+  `;
+};
+
+export default async function decorate(block) {
+  await waitForDependency('solid-js');
   /* change to ul, li */
   const ul = document.createElement('ul');
   [...block.children].forEach((row) => {
@@ -15,4 +31,5 @@ export default function decorate(block) {
   ul.querySelectorAll('img').forEach((img) => img.closest('picture').replaceWith(createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }])));
   block.textContent = '';
   block.append(ul);
+  render(() => [Counter, Counter(120)], ul);
 }
