@@ -1,7 +1,9 @@
 # Adobe Project Franklin Demo
+
 Adobe Project Franklin demo showcase
 
 ## Environments
+
 - Preview: https://main--{repo}--{owner}.hlx.page/
 - Live: https://main--{repo}--{owner}.hlx.live/
 
@@ -19,8 +21,31 @@ npm run lint
 
 ## Local development
 
-1. Create a new repository based on the `helix-project-boilerplate` template and add a mountpoint in the `fstab.yaml`
-1. Add the [helix-bot](https://github.com/apps/helix-bot) to the repository
-1. Install the [Helix CLI](https://github.com/adobe/helix-cli): `npm install -g @adobe/helix-cli`
-1. Start Franklin Proxy: `hlx up` (opens your browser at `http://localhost:3000`)
-1. Open the `{repo}` directory in your favorite IDE and start coding :)
+- Start AEM Proxy (standalone): `aem up` or `npm run aem:up` (opens your browser at `http://localhost:3000`)
+- Start AEM Proxy (with Tailwind styles livereload): `npm run aem` (opens your browser at `http://localhost:3000`)
+- Compile Tailwind styles: `npm run tw:compile`
+
+## Add dependencies
+
+1. Node modules: add items for the dependencies to the `copyDependencies` array in the `package.json` file
+1. External dependencies (from URLs): add items to the `externalDependencies` array in the `package.json` file
+1. Run the update dependencies command
+
+## Dependencies update
+
+### Windows
+
+```sh
+npm run win:deps:update
+```
+
+### Linux
+
+```sh
+npm run linux:deps:update
+```
+
+## Preact bundle update
+
+1. Rebuild the [Standalone Preact](https://standalonepreact.satge.net/) including all the imports.
+1. Copy or download the new bundle and replace the content of the `preact.js` file in the `scripts` folder.
