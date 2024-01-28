@@ -23,23 +23,27 @@ const COPY_WEBPACK_PLUGIN_PATTERNS_PROPERTIES = [
 ];
 
 // remove all unsupported properties from the json
-const copyDependencyPatterns = packageJson.copyDependencies.map(
+const copyDependencyPatterns = packageJson.copyDependencies?.map(
   (dependency) => Object.keys(dependency)
     .filter((key) => COPY_WEBPACK_PLUGIN_PATTERNS_PROPERTIES.includes(key))
     .reduce((obj, key) => {
       obj[key] = dependency[key];
       return obj;
     }, {}),
-);
+) ?? [];
 
 module.exports = {
   entry: {},
   output: {
     path: __dirname,
   },
-  plugins: [
+  plugins: [],
+};
+
+if (copyDependencyPatterns.length) {
+  module.exports.plugins.push(
     new CopyWebpackPlugin({
       patterns: copyDependencyPatterns,
     }),
-  ],
-};
+  );
+}

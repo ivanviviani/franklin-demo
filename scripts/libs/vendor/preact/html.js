@@ -1,4 +1,4 @@
-import { h, htm } from './preact';
+import { h, htm } from './preact.js';
 
 const html = htm.bind(h);
 

@@ -14,7 +14,7 @@ async function* request(url, context) {
   const { chunks, sheet, fetch } = context;
   for (let offset = 0, total = Infinity; offset < total; offset += chunks) {
     const params = new URLSearchParams(`offset=${offset}&limit=${chunks}`);
-    if (sheet) params.append(`sheet`, sheet);
+    if (sheet) params.append('sheet', sheet);
     const resp = await fetch(`${url}?${params.toString()}`);
     if (resp.ok) {
       const json = await resp.json();
@@ -116,7 +116,7 @@ function follow(upstream, context, name, maxInFlight = 5) {
       }
       return entry;
     },
-    maxInFlight
+    maxInFlight,
   );
 }
 
@@ -141,8 +141,7 @@ async function first(upstream) {
 function assignOperations(generator, context) {
   // operations that return a new generator
   function createOperation(fn) {
-    return (...rest) =>
-      assignOperations(fn.apply(null, [generator, context, ...rest]), context);
+    return (...rest) => assignOperations(fn.apply(null, [generator, context, ...rest]), context);
   }
   const operations = {
     skip: createOperation(skip),
@@ -169,13 +168,12 @@ function assignOperations(generator, context) {
 export default function ffetch(url) {
   let chunks = 255;
   const fetch = (...rest) => window.fetch.apply(null, rest);
-  const parseHtml = (html) =>
-    new window.DOMParser().parseFromString(html, "text/html");
+  const parseHtml = (html) => new window.DOMParser().parseFromString(html, 'text/html');
 
   try {
     if (
-      "connection" in window.navigator &&
-      window.navigator.connection.saveData === true
+      'connection' in window.navigator
+      && window.navigator.connection.saveData === true
     ) {
       // request smaller chunks in save data mode
       chunks = 64;
